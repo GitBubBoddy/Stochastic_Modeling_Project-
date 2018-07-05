@@ -1,0 +1,564 @@
+---
+title: "Stochastic_Modeling_Project"
+author: "Kevin Mei"
+date: "July 5, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: "Stochastic Modeling Projects"
+author: "Kevin Mei"
+date: "December 3, 2017"
+output: pdf_document
+---
+Packages:
+```{r, echo=T}
+suppressMessages(library(markovchain))
+suppressMessages(library(matrixcalc))
+```
+
+Q1)
+
+Logic behind the uniform distribution generator $runif$:
+
+1.Creating two vectors X and Y that generate randomly all possible numbers within the interval from -5 to 2
+
+2.Vector X and vecotor Y with size of 1M are being plugged in the equation $2X^2 +XY$ and then performed element wise multiplications and addition.
+
+3.The vector of these 1M results is compared to 4 element-wisely. If an element in the vector is less than 4, the result of the comparision ended up with a $\color{blue}{\textbf{TRUE}}$ value and this created another vector of the size 1M with only $\color{blue}{\textbf{TRUE}}$ and $\color{blue}{\textbf{FALSE}}$ values
+
+$X, Y \sim U(-5,2)$
+```{r}
+X<- runif(1e6,min=-5,max =3)
+Y<- runif(1e6,min=-5,max =3)
+mean((2*X^2 + X*Y)<4)
+```
+
+#Conclusion
+
+Around 38.5% of the 1M comparisions has the value $\color{blue}{\textbf{TRUE}}$ and the other 61.5% has the value $\color{blue}{\textbf{FALSE}}$. In short, the probability probablity that this statement or event $2X^2 +XY<4$ is going to occur with X and Y as uniformly distributed random variables in the interval $(-5,3)$ is 38.5%.
+
+  
+
+\break
+2)
+
+$A, B \sim U(0,1)$
+```{r fig, fig.width=2.5, height= 2}
+#logic
+A<-runif(1e6, min=0,max=1)#generate rv uniformly from 0 to 1
+B<-runif(1e6, min=0,max=1)
+hist(A)#uniform distribution of the vector A
+hist(B)#uniform distribution of the vector B
+hist(A+B)#uniform distribution of the vector A+B
+```
+
+#Conclusion
+
+Each bar on the Histogram representing the number of times that a number is appeared From the uniform distribution operator $runif$. Clearly, the distribution of (A + B) does not look like a smooth stright line and this is not uniformly distributed becasue both vector A and B are random varaibles so that every possible outcome is generated with some randomness and uncertainty. Thus, the sum of two uniform distributions tends to be the expected value or mean.
+
+\break
+
+3)
+
+```{r}
+#logic
+Coin<-function(){
+PreTrail<-sample(c(TRUE,FALSE),1,c(0.5,0.5),replace=T) # flip a fair coin where both head and tail have half and half chance of happening
+Counter<-1 # to count the number of trails/flips until two consecutive heads
+HHTT<-FALSE # changeable arguement for having two consecutive outcomes like 2heads and 2tails
+while(!HHTT){ # loop until two consecutive outcomes
+PostTrail<-sample(c(TRUE,FALSE),1,c(0.5,0.5),replace=T) # next flip
+Counter<-Counter+1 # counting the filp at every iteration
+twoheads<-(PreTrail & PostTrail) # update the argument for two consecutive heads
+PreTrail<-PostTrail # recycling the sample until two consecutive heads
+}
+return(Counter) # return number of flips to get two consecutive heads
+}
+Rep<-replicate(1e4,Coin()) # repeating the function 10000 times
+mean(Rep) # Find average of flips to get two consecutive out within sample size fo 10^4
+```
+
+#Conclusion
+
+In average, two consecutive heads or tails can be acchieved by flipping the coin 6 times.
+
+\break
+
+4.
+
+```{r}
+#logic
+X<-runif(1e6,min=0,max=60)#uniform rv for person A arriving in between 0 min to 60min 
+Y<-runif(1e6,min=0,max=60)
+mean(abs(X-Y)<5)#the average of arrival time difference of A and B is less than 5 min
+```
+
+#Conclusion
+
+There is about 16% chance that person A meets person B within the 5 min gap of arrival time.
+
+\break
+
+5. 
+
+```{r}
+# k1: Gambler 1's initial state
+# k2: Gambler 2's initial state
+# n:  two Gamblers k1 and k2 play until either $n or Ruin
+# p: Probability of K1 winning $1 at each play
+# 1-p: Probability of K2 winning $1 at each play
+# stake: the amount of money that k1 is holding
+# stake: the amount of money that k2 is holding
+# Bet: the gambling amount that k1 and k2 are willing to play for 
+gamble <- function(k1,k2,p) {
+stake <- k1
+stake2 <-k2
+while (stake > 0 & stake2 > 0 & stake2 < (stake2+stake) & stake < (stake2+stake) ) {
+bet <- sample(c(-1,1),1,prob=c(1-p,p))
+stake <- stake + bet   #M
+stake2 <- stake2 - bet #N
+}
+ifelse(stake2 == 0,return(1),return(0))
+}
+
+```
+
+
+```{r}
+k1 <- 1 #inital cash k1 is holding 
+k2 <- 2 #inital cash k1 is holding
+p <- 2/3 #The more experienced gambler k1 has higher win rate for every play
+trials <- 1e4 
+sample <- replicate(trials, gamble(k1,k2,p))#repeating the game 10^4 times
+mean(sample) # Estimate of probability that gambler 2 is ruined or gambler 1 won
+4/7 #exact answer
+```
+\break 
+
+6.
+
+Given:
+n = 1000, 
+P(c)=0.05 
+mean(c)=800 rate = 1/800
+
+
+E(sum(c))?
+```{r}
+claim <- rbinom(1,1000,0.05)
+g <-sum(rexp(claim,1/800))
+x<- mean((replicate(1e6,g)))
+x
+```
+
+
+P(sum(c)>50000) when policyholders = 1000?
+```{r}
+#rbinom(1,1000,0.05) Generating rv for each independent trail
+m1<-mean((replicate(1e5,sum(rexp(rbinom(1,1000,0.05),1/800))))>50000)#sample size of 10000
+sum(rexp(claim,1/800))
+m1
+
+```
+
+```{r}
+costClaimsPerMonth <- function(){
+    pClaim = .05
+    policyholders = 1000
+    avgClaim = 800
+    claimsPerMonth <- rbinom(1, policyholders, pClaim)
+    costPerClaim <- rexp(claimsPerMonth, 1/avgClaim)
+    return(sum(costPerClaim))
+}
+
+monthlyClaimCost <- replicate(1e5, costClaimsPerMonth())
+mean(monthlyClaimCost)
+
+targetSum = 50000
+mean(monthlyClaimCost > targetSum)
+```
+
+
+\break
+
+7.
+
+$Number \space of \space Claim \sim P(n,\lambda),\space\lambda = {10}$
+
+$Claim Amount \sim Exp(m,rate), \space rate = \frac{1}{1000}$
+
+Initial capital = $25000
+
+Average payment per day = $11000
+
+Find P(Capital(t)>0) when t = 365 days?
+```{r}
+mean(replicate(1e6,sum(rexp(rpois(1,10),1/1000))*365)<(25000+11000*365))
+```
+
+\break
+
+8a.
+
+$P(s) = 3/4$
+
+$P(f) = 1/4$
+
+$Find E(n | s = 270) = ?$ 
+Expeted 
+
+```{r}
+Monte <- function(){
+  Count<-0
+  i<-0
+  while(Count >= 0 & Count < 270){
+    Count <- Count + sample(c(1,0),1,replace=T, prob=c(.75,0.25))#stop at 270 success
+    i<-i+1
+  }
+  return(i)
+}
+```
+
+```{r}
+mean(replicate(1000,Monte())) #around 360 times 
+```
+
+8b.
+
+$P(X \leq x_0) = 0.99$ where X is a r.v. as the total trials
+
+
+```{r}
+X<-replicate(1000,Monte())
+quantile(X,.99)
+
+```
+
+\break
+
+9.
+```{r}
+#Part 1
+
+1-mean((replicate(1e6,rbinom(1,55,0.9))-52)<1)
+1-mean((rbinom(1e6,55,0.9)-52)<1)
+mean((rbinom(1e6,55,0.9)-52)>=1)
+mean((rbinom(1e6,55,0.9)-52)>0)
+```
+
+```{r}
+#Part 2
+
+#G<-the amount of gift card is been given
+z<-mean((rbinom(1e6,55,0.9)-52)==1)#P(G=1)
+x<-mean((rbinom(1e6,55,0.9)-52)==2)#P(G=2)
+c<-mean((rbinom(1e6,55,0.9)-52)==3)#P(G=3)
+mean(replicate(1e6,(1*z+2*x+3*c)*100))#E(G)
+
+```
+
+
+
+1.
+
+Given:
+
+
+#Given Variables or State space:
+
+q = The probability of moving to the left
+
+p = The probability of moving to the Right
+
+b = The probability of moving backward
+
+
+States = \{ 0, 1, ,2 , 3\}
+
+
+a)
+
+Probability Distribution Matrix $RW$:
+```{r}
+#logic for matrix RW
+RW<- matrix(c(0, 1,0,0,.25,0,.75,0,0,.25,0,.75,0,0,1,0),ncol = 4,nrow = 4,byrow= TRUE)
+colnames(RW) <- paste(c("0","1","2","3"))
+rownames(RW) <- paste(c("0","1","2","3"))
+RW
+```
+
+b) 
+
+$P(X_7 =1 |X_0=3, X_2=2, x_4 =2)$
+
+$= P(X_7 = 1 | X_4 = 2)$
+
+$= (X^3)_{21}$
+
+$= 0.296875$
+ 
+```{r}
+RW3<-matrix.power(RW,3)
+RW3 #Probability distribution within 3 time steps
+```
+
+```{r}
+RW3[3,2]
+```
+
+
+c)
+
+$P(X_3 =1 |X_5=3)$
+
+$= \frac{P(X_5 =3 | X_3=1) * P(X_3 =1)}{P(X_5=3)}$
+
+$= \frac{\pi_1}{\pi_3}*P^2_{3,3}$
+
+
+
+\break
+
+2.
+
+
+#Given Variables or State space:
+
+S = probability of solving a HW problem successfully
+
+F = probability of solving a HW problem unsuccessfully
+
+
+States = \{ S,F \}
+
+Probability Distribution Matrix $HW$:
+```{r}
+#logic for matrix HW
+HW<- matrix(c(0.6,0.4,0.25,0.75),ncol = 2,nrow = 2,byrow= TRUE)
+colnames(HW) <- paste(c("S","F"))
+rownames(HW) <- paste(c("S","F"))
+HW
+```
+
+Relationship Diagram ($HW$):
+```{r,echo=T}
+statesNames=c("S","F")
+mcB<-new("markovchain", states=statesNames, transitionMatrix=
+          matrix(c(0.6,0.4,0.25,0.75),nrow=2, byrow=TRUE, dimnames=list(statesNames,
+				   statesNames)
+                 ))
+plot(mcB)
+```
+
+
+
+
+```{r,echo=T}
+library(matrixcalc)
+HW1<-matrix.power(HW,1)
+HW16<-matrix.power(HW,16)
+```
+
+Probability distribution of success and failture in solving a HW problem at an arbitrary time:
+```{r}
+HW1 #One step transition matrix(original)
+```
+
+Probability of solving a HW successfully in a long run:
+```{r}
+HW16[,1] #Invariant distribution
+```
+
+\break
+
+3. 
+
+#Given Variables or State space:
+
+80  = probability of experiencing an attack From port 80
+
+135 = probability of experiencing an attack From port 135
+
+139 = probability of experiencing an attack From port 139
+
+445 = probability of experiencing an attack From port 445
+
+No attack = probability of experiencing no attack
+
+States = \{ 80, 135, 139, 445 \}
+
+Time Step = 1 per week
+
+Matrix $\alpha$:
+```{r,echo=T}
+#logic for matrix Alpha
+Alpha<- matrix(c(0,0,0,0,1),ncol = 5,nrow = 1,byrow= TRUE)
+colnames(Alpha) <- paste(c("80","135","139","445", "No attack"))
+rownames(Alpha) <- paste(c("Alpha"))
+Alpha
+
+```
+
+Probability Distribution Matrix $HPot$:
+```{r, echo=T}
+#logic for matrix HPot
+HPot<- matrix(c(0,0,0,0,1,0,8/13,3/13,1/13,1/13,1/16,
+                3/16,3/8,1/4,1/8,0,1/11,4/11,5/11,1/11,0,1/8,1/2,1/8,1/4)
+              ,ncol = 5,nrow = 5,byrow= TRUE)
+colnames(HPot) <- paste(c("80","135","139","445", "No attack"))
+rownames(HPot) <- paste(c("80","135","139","445", "No attack"))
+HPot
+```
+
+
+a)
+
+$(\alpha_k * HPot^{2})_{j}$
+```{r}
+HPot2<-matrix.power(HPot,2)
+Alpha%*%HPot2
+```
+
+
+b)
+
+Attack ports in long term:
+
+```{r}
+HPot25<-matrix.power(HPot,25)
+HPot25 #Invariant distribution
+```
+
+c)
+
+Probability of experiencing attacks for 4 ports within 25 weeks:
+```{r}
+Alpha%*%HPot25
+```
+
+According to the Markov Chain processs, port 139 is most likely to be attacked by hackers and part 80 is the least likely one.
+
+
+\break
+
+4.
+
+
+#Given Variables or State space:
+
+r = probability of raining
+
+s = probability of snowing
+
+c = probability of clear weather
+
+States = \{ r, s, c \}
+
+
+
+
+```{r, echo=T}
+#logic for P matrix
+P<- matrix(c(0.2,0.6,0.2,0.1,0.8,0.1,0.1,0.6,0.3),ncol = 3,nrow = 3,byrow= TRUE)
+colnames(P) <- paste(c("r","s","c"))
+rownames(P) <- paste(c("r","s","c"))
+
+
+#logic for Pi matrix
+Pi <- matrix(c(0.5,0.5,0),ncol=3,nrow=1,byrow = TRUE)
+colnames(Pi) <- paste(c("r","s","c"))
+rownames(Pi) <- paste("Pi") 
+```
+
+One step transition Matrix of the weather Markov Chain ($P$):
+```{r,echo=T}
+P 
+matrix.power(P,4)
+```
+
+Initial distribution ($\pi$):
+```{r}
+Pi
+```
+
+
+\break
+
+5.
+
+
+#Given Variables or State space:
+
+Drop = probability of dropping out of college in overall 
+
+Fr = probability of dropping out of college in Freshmen level
+
+So = probability of dropping out of college in Sophmore level
+
+Jr = probability of dropping out of college in Junior level
+
+Sr = probability of dropping out of college in Senior level
+
+Grad = probability of graduating from the college in overall
+
+States = \{ Drop, Fr, So, Jr, Sr, Grad \}
+
+Time step = 1 per year
+
+
+
+```{r, echo=T}
+#logic for P matrix
+P<- matrix(c(1,0,0,0,0,0,.06,.03,.91,0,0,0,.06,0,.03,.91,0,0,.04,0,0,.03,.93,0,.04,0,0,0,.03,.93,0,0,0,0,0,1),ncol = 6,nrow = 6,byrow= TRUE)
+colnames(P) <- paste(c("Drop","Fr","So","Jr","Sr","Grad"))
+rownames(P) <- paste(c("Drop","Fr","So","Jr","Sr","Grad"))
+
+
+#logic for Alpha matrix
+Alpha <- matrix(c(0, 1, 0, 0, 0, 0),ncol=6,nrow=1,byrow = TRUE)
+colnames(Alpha) <- paste(c("Drop","Fr","So","Jr","Sr","Grad"))
+rownames(Alpha) <- paste("Alpha") 
+```
+
+Probability distribution of graduation rate at a perticular year($P$):
+```{r,echo=T}
+P
+```
+
+
+Initial distribution($\alpha$):
+```{r,echo=T}
+Alpha
+```
+
+
+Drop out rate and graduation rate within 10 years($X_{10}$):
+```{r,echo=T}
+P10<-matrix.power(P,10)
+```
+
+
+```{r, echo=T}
+X10<-Alpha%*%P10
+cat("Within 10 years",sep="\n")
+cat("Overall drop out rate: ", X10[1,1],sep="\n")
+cat("Freshment drop out rate: ", X10[1,2],sep="\n")
+cat("Sophomore drop out rate: ", X10[1,3],sep="\n")
+cat("Junior drop out rate: ", X10[1,4],sep="\n")
+cat("Senior drop out rate: ", X10[1,5],sep="\n")
+cat("Overall graduation rate: ", X10[1,6],sep="\n")
+```
+
+Freshment graduation rate within 10 years($Fr_{10}$):
+```{r}
+mean(replicate(10000,(X10[1,6])))*100 #Around 81% chance
+```
+
+
+
+
